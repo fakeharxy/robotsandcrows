@@ -4,6 +4,7 @@ import GameEngine from 'lance/GameEngine';
 import SimplePhysicsEngine from 'lance/physics/SimplePhysicsEngine';
 import PlayerAvatar from './PlayerAvatar';
 import TwoVector from 'lance/serialize/TwoVector';
+import Aviary from './Aviary';
 import Robot from './Robot';
 import Crow from './Crow';
 const PADDING = 20;
@@ -58,7 +59,7 @@ export default class MyGameEngine extends GameEngine {
         };
 
         this.robotList = [];
-        this.crowsList = [];
+        this.crowList = [];
 
     }
 
@@ -78,8 +79,8 @@ export default class MyGameEngine extends GameEngine {
     }
 
     postStepHandleCrows() {
-      for (i =0; i < crowList.length; i++) {
-        let crow = crowList[i];
+      for (var i = 0; i < this.crowList.length; i++) {
+        let crow = this.crowList[i];
         if (crow) {
           if (crow.playerId == 1) {
             crow.velocity = new TwoVector(2,0);
@@ -91,14 +92,15 @@ export default class MyGameEngine extends GameEngine {
     }
 
     postStepHandleRobots() {
-      for (i = 0; i < robotList.length; i++) {
-        let robot = robotList[i];
+      for (var i = 0; i < this.robotList.length; i++) {
+        let robot = this.robotList[i];
         if (robot) {
           //check robot hasn't killed itself etc
+        }
       }
     }
 
     sendCrow(aviary, command) {
-      this.addObjectToWorld(new Crow(this, null, { position: new TwoVector(aviary.position.x, aviary.position.y), playerId: aviary.playerId, command: command }));,
+      this.addObjectToWorld(new Crow(this, null, { position: new TwoVector(aviary.position.x, aviary.position.y), playerId: aviary.playerId, command: command }));
   }
 }

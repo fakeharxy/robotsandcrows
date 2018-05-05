@@ -25,7 +25,7 @@ export default class MyRenderer extends Renderer {
 
     addSprite(obj, objName) {
         objName += obj.playerId;
-        console.log(obj);
+        //console.log(obj);
         this.sprites[obj.id] = {
             el: document.querySelector('.' + objName)
         };

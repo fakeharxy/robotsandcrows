@@ -20,21 +20,7 @@ export default class MyServerEngine extends ServerEngine {
 
 
         this.gameEngine.on('crowArrived', (e) => {
-            console.log('crow arrived');
-            if (e.crow.command) {
-                if (e.crow.command == 'up') {
-                    e.robot.velocity = new TwoVector(0, -0.5);
-                } else if (e.crow.command == 'right') {
-                    e.robot.velocity = new TwoVector(0.5, 0);
-                } else if (e.crow.command == 'left') {
-                    e.robot.velocity = new TwoVector(-0.5, 0);
-                } else if (e.crow.command == 'down') {
-                    e.robot.velocity = new TwoVector(0, 0.5);
-                }
-            } else {
-                console.log('----missing command---');
-                console.log(e.crow);
-            }
+            
         });
     }
 

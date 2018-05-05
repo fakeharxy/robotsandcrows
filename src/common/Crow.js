@@ -13,7 +13,6 @@ export default class Crow extends DynamicObject {
             this.playerId = props.playerId;
         if (props && props.command) {
             this.command = props.command;
-            console.log(this.command);
         }
         this.class = Crow;
        // this.velocity.set(2, 2);

@@ -2,6 +2,7 @@
 
 import ServerEngine from 'lance/ServerEngine';
 import PlayerAvatar from '../common/PlayerAvatar';
+import TwoVector from 'lance/serialize/TwoVector';
 
 export default class MyServerEngine extends ServerEngine {
 
@@ -16,6 +17,25 @@ export default class MyServerEngine extends ServerEngine {
             player1: null,
             player2: null
         };
+
+
+        this.gameEngine.on('crowArrived', (e) => {
+            console.log('crow arrived');
+            if (e.crow.command) {
+                if (e.crow.command == 'up') {
+                    e.robot.velocity = new TwoVector(0, -0.5);
+                } else if (e.crow.command == 'right') {
+                    e.robot.velocity = new TwoVector(0.5, 0);
+                } else if (e.crow.command == 'left') {
+                    e.robot.velocity = new TwoVector(-0.5, 0);
+                } else if (e.crow.command == 'down') {
+                    e.robot.velocity = new TwoVector(0, 0.5);
+                }
+            } else {
+                console.log('----missing command---');
+                console.log(e.crow);
+            }
+        });
     }
 
 

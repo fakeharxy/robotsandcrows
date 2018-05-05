@@ -9,6 +9,12 @@ export default class Crow extends DynamicObject {
 
     constructor(gameEngine, options, props) {
         super(gameEngine, options, props);
+        if (props && props.playerId)
+            this.playerId = props.playerId;
+        if (props && props.command) {
+            this.command = props.command;
+            console.log(this.command);
+        }
         this.class = Crow;
        // this.velocity.set(2, 2);
     }

@@ -28,10 +28,10 @@ export default class MyGameEngine extends GameEngine {
     }
 
     initGame() {
-       this.addObjectToWorld(new Aviary(this, null, { position: new TwoVector(PADDING, HEIGHT / 2), playerId: 1 }));
-       this.addObjectToWorld(new Aviary(this, null, { position: new TwoVector(WIDTH - PADDING, HEIGHT / 2), playerId: 2 }));
-       this.addObjectToWorld(new Robot(this, null, { position: new TwoVector(PADDING + PADDING, HEIGHT / 2), playerId: 1 }));
-       this.addObjectToWorld(new Robot(this, null, { position: new TwoVector(WIDTH - PADDING - PADDING, HEIGHT / 2), playerId: 2 }));
+        this.addObjectToWorld(new Aviary(this, null, { position: new TwoVector(PADDING, HEIGHT / 2), playerId: 1 }));
+        this.addObjectToWorld(new Aviary(this, null, { position: new TwoVector(WIDTH - PADDING, HEIGHT / 2), playerId: 2 }));
+        this.addObjectToWorld(new Robot(this, null, { position: new TwoVector(PADDING + PADDING, HEIGHT / 2), playerId: 1 }));
+        this.addObjectToWorld(new Robot(this, null, { position: new TwoVector(WIDTH - PADDING - PADDING, HEIGHT / 2), playerId: 2 }));
     }
 
     start() {
@@ -41,7 +41,28 @@ export default class MyGameEngine extends GameEngine {
         this.on('postStep', () => { this.postStepHandleCrows(); });
         this.on('postStep', () => { this.postStepHandleRobots(); });
 
+        this.on('collisionStart', (e) => {
+            let collisionObjects = Object.keys(e).map((k) => e[k]);
+            let crow = collisionObjects.find((o) => o instanceof Crow);
+            let robot = collisionObjects.find((o) => o instanceof Robot);
+
+            if (!crow || !robot)
+                return;
+
+            // make sure not to process the collision between a missile and the ship that fired it
+            if (crow.playerId == robot.playerId) {
+                console.log(this.crowList);
+                let index = this.crowList.indexOf(crow);
+                if (index !== -1) this.crowList.splice(index, 1);
+                this.removeObjectFromWorld(crow.id);
+                console.log(this.crowList);
+                this.emit('crowArrived', { crow, robot });
+            }
+
+        });
+
         this.on('objectAdded', (object) => {
+            console.log('----- ' + object.class.name + ' --------');
             if (object.class === Crow) {
                 this.crowList.push(object);
             } else if (object.class === Robot) {
@@ -68,39 +89,39 @@ export default class MyGameEngine extends GameEngine {
         super.processInput(inputData, playerId);
 
         // get the player's primary object
-        let aviary = this.world.getPlayerObject(playerId);
+        let aviary = this.world.queryObject({ playerId });
         if (aviary) {
-            console.log('player ${playerId} pressed ${inputData.input}');
+            console.log('player' + playerId + ' pressed ' + inputData.input);
             if (DIRECTIONS.includes(inputData.input)) {
-                this.sendCrow(player, inputData.input);
+                this.sendCrow(aviary, inputData.input);
                 // this.emit('fire');
             }
         }
     }
 
     postStepHandleCrows() {
-      for (var i = 0; i < this.crowList.length; i++) {
-        let crow = this.crowList[i];
-        if (crow) {
-          if (crow.playerId == 1) {
-            crow.velocity = new TwoVector(2,0);
-          } else {
-            crow.velocity = new TwoVector(-2,0);
-          }
+        for (let i = 0; i < this.crowList.length; i++) {
+            let crow = this.crowList[i];
+            if (crow) {
+                if (crow.playerId == 1) {
+                    crow.velocity = new TwoVector(0.5, 0);
+                } else {
+                    crow.velocity = new TwoVector(-0.5, 0);
+                }
+            }
         }
-      }
     }
 
     postStepHandleRobots() {
-      for (var i = 0; i < this.robotList.length; i++) {
-        let robot = this.robotList[i];
-        if (robot) {
-          //check robot hasn't killed itself etc
+        for (let i = 0; i < this.robotList.length; i++) {
+            let robot = this.robotList[i];
+            if (robot) {
+          // check robot hasn't killed itself etc
+            }
         }
-      }
     }
 
     sendCrow(aviary, command) {
-      this.addObjectToWorld(new Crow(this, null, { position: new TwoVector(aviary.position.x, aviary.position.y), playerId: aviary.playerId, command: command }));
-  }
+        this.addObjectToWorld(new Crow(this, null, { position: new TwoVector(aviary.position.x, aviary.position.y), playerId: aviary.playerId, command: command }));
+    }
 }

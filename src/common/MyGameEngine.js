@@ -21,7 +21,7 @@ export default class MyGameEngine extends GameEngine {
     constructor(options) {
         super(options);
         this.physicsEngine = new SimplePhysicsEngine({ gameEngine: this });
-        this.physicsEngine.options.COLLISION_DISTANCE = 4;
+        this.physicsEngine.collisionDetection.options.COLLISION_DISTANCE = 4;
     }
 
     registerClasses(serializer) {

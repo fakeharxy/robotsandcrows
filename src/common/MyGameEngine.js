@@ -12,7 +12,6 @@ const WIDTH = 400;
 const HEIGHT = 400;
 const ROBOT_WIDTH = 10;
 const ROBOT_HEIGHT = 10;
-const CROWSPEED = 0.5;
 const ROBOTSPEED = 0.1;
 const DIRECTIONS = ['up', 'down', 'left', 'right'];
 
@@ -54,13 +53,13 @@ export default class MyGameEngine extends GameEngine {
 
             // make sure not to process the collision between a missile and the ship that fired it
             if (crow.playerId == robot.playerId) {
-                console.log("crow collided with correct robot");
-                //console.log(this.crowList);
-                //let index = this.crowList.indexOf(crow);
-                //if (index !== -1) this.crowList.splice(index, 1);
-                delete this.crowList[crow];
-                //console.log(this.crowList);
-            
+                console.log('crow collided with correct robot');
+                // console.log(this.crowList);
+                let index = this.crowList.indexOf(crow);
+                if (index !== -1) this.crowList.splice(index, 1);
+                // delete this.crowList[crow];
+                // console.log(this.crowList);
+
                 if (crow.command) {
                     if (crow.command == 'up') {
                         robot.velocity = new TwoVector(0, -ROBOTSPEED);
@@ -75,9 +74,9 @@ export default class MyGameEngine extends GameEngine {
                     console.log('----missing command---');
                     console.log(crow);
                 }
-                
+
                 this.removeObjectFromWorld(crow);
-                
+
                 this.emit('crowArrived', { crow, robot });
             }
 
@@ -115,8 +114,22 @@ export default class MyGameEngine extends GameEngine {
         if (aviary) {
             console.log('player' + playerId + ' pressed ' + inputData.input);
             if (DIRECTIONS.includes(inputData.input)) {
-                this.sendCrow(aviary, inputData.input);
-                // this.emit('fire');
+              for (let i = 0; i < this.crowList.length; i++) {
+                if (this.crowList[i].playerId == playerId) {
+                  console.log("too many crows");
+                  return;
+                }
+              }
+              // find the first robot for this player
+
+                for (let i = 0; i < this.robotList.length; i++) {
+                    if (this.robotList[i].playerId == playerId) {
+                        this.sendCrow(aviary, this.robotList[i], inputData.input);
+                  // do we need to emit as well to keep clients in sync?
+                  // this.emit('fire');
+                        break;
+                    }
+                }
             }
         }
     }
@@ -125,11 +138,13 @@ export default class MyGameEngine extends GameEngine {
         for (let i = 0; i < this.crowList.length; i++) {
             let crow = this.crowList[i];
             if (crow) {
-                if (crow.playerId == 1) {
-                    crow.velocity = new TwoVector(CROWSPEED, 0);
-                } else {
-                    crow.velocity = new TwoVector(-CROWSPEED, 0);
-                }
+                // work out crow vector based on target
+                crow.updateVelocity();
+                // if (crow.playerId == 1) {
+                //    crow.velocity = new TwoVector(CROWSPEED, 0);
+                // } else {
+                //    crow.velocity = new TwoVector(-CROWSPEED, 0);
+                // }
             }
         }
     }
@@ -143,7 +158,7 @@ export default class MyGameEngine extends GameEngine {
         }
     }
 
-    sendCrow(aviary, command) {
-        this.addObjectToWorld(new Crow(this, null, { position: new TwoVector(aviary.position.x, aviary.position.y), playerId: aviary.playerId, command: command }));
+    sendCrow(aviary, target, command) {
+        this.addObjectToWorld(new Crow(this, null, { position: new TwoVector(aviary.position.x, aviary.position.y), playerId: aviary.playerId, target: target, command: command }));
     }
 }

@@ -1,6 +1,7 @@
 'use strict';
 
 import DynamicObject from 'lance/serialize/DynamicObject';
+const CROWSPEED = 0.5;
 
 export default class Crow extends DynamicObject {
 
@@ -11,6 +12,8 @@ export default class Crow extends DynamicObject {
         super(gameEngine, options, props);
         if (props && props.playerId)
             this.playerId = props.playerId;
+        if (props && props.target)
+            this.target = props.target;
         if (props && props.command) {
             this.command = props.command;
         }
@@ -23,4 +26,14 @@ export default class Crow extends DynamicObject {
             gameEngine.renderer.addSprite(this, 'crow');
         }
     }
+
+    updateVelocity() {
+        if (this.target) {
+            let vec = this.target.position.clone();
+            vec.subtract(this.position);
+            vec.multiplyScalar(CROWSPEED / vec.length());
+            this.velocity = vec;
+        }
+    }
+
 }

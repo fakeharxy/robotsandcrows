@@ -7,6 +7,12 @@ export default class MyClientEngine extends ClientEngine {
     constructor(gameEngine, options) {
         super(gameEngine, options, MyRenderer);
 
+
+        this.gameEngine.on('objectDestroyed', (obj) => {
+            console.log("----- something was destroyed -----");
+            console.log(obj);
+        });
+
         this.controls = new KeyboardControls(this);
         this.controls.bindKey('up', 'up');
         this.controls.bindKey('down', 'down');

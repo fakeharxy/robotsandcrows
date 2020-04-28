@@ -1,0 +1,110 @@
+<html>
+    <head>
+        <title>Robots and Crows</title>
+        <meta charset="utf-8">
+        <style>
+          body {
+            background-color: '#A86';
+            margin:0;
+            padding:0;
+            overflow: hidden;
+            color:black;
+            font-family:"Courier New", Courier, monospace;
+            font-size: 12px;
+          }
+          a {
+            color:black;
+            text-decoration: none;
+            font-weight: bold;
+          }
+          canvas {
+            width:100%;
+            height:100%;
+            position:absolute;
+          }
+          .textBox {
+            margin:10px;
+            display: inline-block;
+          }
+          .textBox.centered {
+            width:500px;
+            height:100px;
+            margin-left: -250px;
+            margin-top: -50px;
+            position: absolute;
+            top:50%;
+            left:50%;
+            vertical-align: middle;
+            text-align: center;
+          }
+          .textBox.bottomRight {
+            position:absolute;
+            right:0;
+            bottom:0;
+          }
+          .textBox.bottomLeft {
+            position:absolute;
+            left:0;
+            bottom:0;
+          }
+          .textBox.title {
+            font-size: 24px;
+          }
+          .hidden {
+            display: none;
+          }
+          .actionButton {
+              opacity: 0;
+              transition: all 0.5s ease-in;
+              background: #000;
+              width: 5rem;
+              height: 5rem;
+              position: absolute;
+              bottom: 1rem;
+              transform: translateX(-50%);
+              border: 3px solid #ff2f95;
+              border-radius: 5rem;
+              color: #ff2f95;
+          }
+          .fireButton {
+            left: 40%;
+            content: "FIRE";
+          }
+          .fireButton::before {
+              content: "FIRE";
+              position: absolute;
+              color: #ff2f95;
+              left: 50%;
+              top: 50%;
+              transform: translateX(-50%) translateY(-50%);
+          }
+          .boostButton {
+            left: 50%;
+            content: "BOOST";
+          }
+          .boostButton::before {
+              content: "BOOST";
+              position: absolute;
+              color: #ff2f95;
+              left: 50%;
+              top: 50%;
+              transform: translateX(-50%) translateY(-50%);
+          }
+
+        </style>
+
+    </head>
+    <body>
+        <div id="logo" class="textBox bottomRight">powered by <a href="https://lance.gg">lance.gg</a> multiplayer</div>
+        <div id="logo" class="textBox bottomLeft">by Harker & Nicholson</div>
+        <div id="title" class="textBox title">Robots and Crows</div>
+        <div id="level" class="textBox"></div>
+        <div id="lives" class="textBox"></div>
+        <div id="gameover" class="textBox centered hidden">Game Over</div>
+        <div id="instructions" class="textBox centered hidden">arrow keys : send movement crow<br/>space bar : send action crow</div>
+        <div id="instructionsMobile" class="textBox centered hidden">[mobile controls?]</div>
+        <div class="fireButton actionButton"></div>
+        <div class="boostButton actionButton"></div>
+        <script src="bundle.js" type="text/javascript"></script>
+    </body>
+</html>

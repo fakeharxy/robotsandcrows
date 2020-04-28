@@ -1,39 +1,56 @@
-'use strict';
+import { PhysicalObject2D, BaseTypes } from 'lance-gg';
 
-import DynamicObject from 'lance/serialize/DynamicObject';
-const CROWSPEED = 0.5;
+let game = null;
+let p2 = null;
 
-export default class Crow extends DynamicObject {
+export default class Crow extends PhysicalObject2D {
 
-    get bendingMultiple() { return 0.8; } // not sure on this yet
-    get bendingVelocityMultiple() { return 0; } // or this
-
-    constructor(gameEngine, options, props) {
-        super(gameEngine, options, props);
-        if (props && props.playerId)
-            this.playerId = props.playerId;
-        if (props && props.target)
-            this.target = props.target;
-        if (props && props.command) {
-            this.command = props.command;
-        }
-        this.class = Crow;
-       // this.velocity.set(2, 2);
+    static get netScheme() {
+        return Object.assign({
+            message: { type: BaseTypes.TYPES.STRING }
+        }, super.netScheme);
     }
 
-    onAddToWorld(gameEngine) {
-        if (gameEngine.renderer) {
-            gameEngine.renderer.addSprite(this, 'crow');
-        }
+    // position bending: bend fully to server position in each sync [percent=1.0],
+    // unless the position difference is larger than 4.0 (i.e. wrap beyond bounds)
+    // no angular velocity bending
+    get bending() {
+        return { 
+            position: { max: 4.0 },
+            angularVelocity: { percent: 0.0 }
+        };
     }
 
-    updateVelocity() {
-        if (this.target) {
-            let vec = this.target.position.clone();
-            vec.subtract(this.position);
-            vec.multiplyScalar(CROWSPEED / vec.length());
-            this.velocity = vec;
-        }
+    onAddToWorld() {
+        game = this.gameEngine;
+        p2 = game.physicsEngine.p2;
+
+        this.physicsObj = new p2.Body({
+            mass: this.mass, damping: 0, angularDamping: 0,
+            position: [this.position.x, this.position.y],
+            velocity: [this.velocity.x, this.velocity.y]
+        });
+
+         // Create crow shape
+        let shape = new p2.Circle({
+            radius: game.crowRadius,
+            collisionGroup: game.CROW, // Belongs to the CROW group
+            collisionMask: game.ROBOT // Can only collide with the ROBOT group
+        });
+        this.physicsObj.addShape(shape);
+        game.physicsEngine.world.addBody(this.physicsObj);
     }
 
+    onRemoveFromWorld(gameEngine) {
+        game.physicsEngine.world.removeBody(this.physicsObj);
+    }
+
+    syncTo(other) {
+        super.syncTo(other);
+        this.message = other.message;
+    }
+
+    toString() {
+        return `Crow::${super.toString()} message=${this.message}`;
+    }
 }

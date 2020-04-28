@@ -13676,7 +13676,7 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
         position: [this.position.x, this.position.y],
         angle: this.angle,
         damping: 0,
-        angularDamping: 0
+        angularDamping: 0.9
       });
       this.physicsObj.addShape(this.shape);
       gameEngine.physicsEngine.world.addBody(this.physicsObj);
@@ -13708,18 +13708,14 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
     }
     */
     // no position bending if difference is larger than 4.0 (i.e. wrap beyond bounds),
-    // no angular velocity bending, no local angle bending
+    // TODO which is needed? no angular velocity bending, no local angle bending
     get: function get() {
       return {
         position: {
           max: 4.0
-        },
-        angularVelocity: {
-          percent: 0.0
-        },
-        angleLocal: {
-          percent: 0.0
-        }
+        } //angularVelocity: { percent: 0.0 },
+        //angleLocal: { percent: 0.0 }
+
       };
     }
   }]);
@@ -30780,17 +30776,37 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
     value: function drawRobot(body) {
       var size = 0.5 * body.shapes[0].width; // width and height are the same; robot is square
 
+      var armSize = size * 0.4;
       ctx.save();
       ctx.fillStyle = col_robot;
       ctx.translate(body.position[0], body.position[1]); // Translate to the robot center
-      //ctx.rotate(body.angle); // Rotate to robot orientation TODO: could be interesting
+
+      ctx.rotate(body.angle); // Rotate to robot orientation TODO: could be interesting
+      //left arm
+
+      ctx.beginPath();
+      ctx.moveTo(-size, -armSize);
+      ctx.lineTo(-size - armSize, -armSize);
+      ctx.lineTo(-size - armSize, armSize);
+      ctx.lineTo(-size, armSize);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.fill(); //right arm
+
+      ctx.beginPath();
+      ctx.moveTo(size, -armSize);
+      ctx.lineTo(size + armSize, -armSize);
+      ctx.lineTo(size + armSize, armSize);
+      ctx.lineTo(size, armSize);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.fill(); //body
 
       ctx.beginPath();
       ctx.moveTo(-size, -size);
       ctx.lineTo(-size, size);
       ctx.lineTo(size, size);
-      ctx.lineTo(size, -size); //ctx.lineTo(-size,-size);
-
+      ctx.lineTo(size, -size);
       ctx.closePath();
       ctx.stroke();
       ctx.fill();
@@ -31048,7 +31064,7 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       var vy = 0;
       var c = new __WEBPACK_IMPORTED_MODULE_2__Crow__["a" /* default */](this, {}, {
         playerId: playerAviary.playerId,
-        mass: 0.01,
+        mass: 0.0001,
         angularVelocity: 0,
         position: playerAviary.position,
         //is copied anyway
@@ -31065,14 +31081,19 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         //console.log("crow delivered message " + crow.message);
         if (crow.message === 'up') {
           robot.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](0, this.robotSpeed);
+          robot.angle = 0;
         } else if (crow.message === 'right') {
           robot.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](this.robotSpeed, 0);
+          robot.angle = Math.PI / 2;
         } else if (crow.message === 'left') {
           robot.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](-this.robotSpeed, 0);
+          robot.angle = -Math.PI / 2;
         } else if (crow.message === 'down') {
           robot.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](0, -this.robotSpeed);
+          robot.angle = Math.PI;
         }
 
+        robot.angularVelocity = 0;
         robot.refreshToPhysics();
         this.removeObjectFromWorld(crow.id);
       } else {

@@ -136,7 +136,7 @@ export default class RoCrowsGameEngine extends GameEngine {
 
         let c = new Crow(this, {}, {
             playerId: playerAviary.playerId,
-            mass: 0.01, angularVelocity: 0,
+            mass: 0.0001, angularVelocity: 0,
             position: playerAviary.position, //is copied anyway
             velocity: new TwoVector(vx, vy)
         });
@@ -150,13 +150,18 @@ export default class RoCrowsGameEngine extends GameEngine {
             //console.log("crow delivered message " + crow.message);
             if (crow.message === 'up') {
                 robot.velocity = new TwoVector(0, this.robotSpeed);
+                robot.angle = 0;
             } else if (crow.message === 'right') {
                 robot.velocity = new TwoVector(this.robotSpeed, 0);
+                robot.angle = Math.PI / 2;
             } else if (crow.message === 'left') {
                 robot.velocity = new TwoVector(-this.robotSpeed, 0);
+                robot.angle = -Math.PI / 2
             } else if (crow.message === 'down') {
                 robot.velocity = new TwoVector(0, -this.robotSpeed);
+                robot.angle = Math.PI;
             }
+            robot.angularVelocity = 0;
             robot.refreshToPhysics();
             this.removeObjectFromWorld(crow.id);
         } else {

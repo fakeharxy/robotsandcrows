@@ -14,12 +14,12 @@ export default class Robot extends PhysicalObject2D {
     */
    
     // no position bending if difference is larger than 4.0 (i.e. wrap beyond bounds),
-    // no angular velocity bending, no local angle bending
+    // TODO which is needed? no angular velocity bending, no local angle bending
     get bending() {
         return {
             position: { max: 4.0 },
-            angularVelocity: { percent: 0.0 },
-            angleLocal: { percent: 0.0 }
+            //angularVelocity: { percent: 0.0 },
+            //angleLocal: { percent: 0.0 }
         };
     }
 
@@ -38,7 +38,7 @@ export default class Robot extends PhysicalObject2D {
             mass: 1,
             position: [this.position.x, this.position.y],
             angle: this.angle,
-            damping: 0, angularDamping: 0 });
+            damping: 0, angularDamping: 0.9 });
         this.physicsObj.addShape(this.shape);
         gameEngine.physicsEngine.world.addBody(this.physicsObj);
     }

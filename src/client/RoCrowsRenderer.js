@@ -84,19 +84,42 @@ export default class RoCrowsRenderer extends Renderer {
 
     drawRobot(body) {
         let size = 0.5 * body.shapes[0].width; // width and height are the same; robot is square
+        let armSize = size * 0.4;
         ctx.save();
         ctx.fillStyle = col_robot;
         ctx.translate(body.position[0], body.position[1]); // Translate to the robot center
-        //ctx.rotate(body.angle); // Rotate to robot orientation TODO: could be interesting
+        ctx.rotate(body.angle); // Rotate to robot orientation TODO: could be interesting
+        
+        //left arm
+        ctx.beginPath();
+        ctx.moveTo(-size        , -armSize);
+        ctx.lineTo(-size-armSize, -armSize);
+        ctx.lineTo(-size-armSize,  armSize);
+        ctx.lineTo(-size        ,  armSize);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fill();
+        
+        //right arm
+        ctx.beginPath();
+        ctx.moveTo( size        , -armSize);
+        ctx.lineTo( size+armSize, -armSize);
+        ctx.lineTo( size+armSize,  armSize);
+        ctx.lineTo( size        ,  armSize);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fill();
+        
+        //body
         ctx.beginPath();
         ctx.moveTo(-size,-size);
         ctx.lineTo(-size, size);
         ctx.lineTo( size, size);
         ctx.lineTo( size,-size);
-        //ctx.lineTo(-size,-size);
         ctx.closePath();
         ctx.stroke();
         ctx.fill();
+
         ctx.restore();
 
     }

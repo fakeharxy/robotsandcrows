@@ -90,14 +90,19 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
       // goes from top to bottom, while physics does the opposite.
 
       ctx.save();
-      ctx.translate(game.w / 2, game.h / 2); // Translate to the center TODO: consider if this is best for RoCrows2
+      ctx.translate(game.w / 2, game.h / 2); // Translate to the center TODO: consider if this is best for RoCrows
 
       ctx.scale(game.zoom, -game.zoom); // Zoom in and flip y axis
+
+      /*
+       * Note that flipping the scale like this means all local rotations are also 'flipped'
+       * and must be entered as negative.
+       */
       // Draw all things
 
       this.drawBounds();
       game.world.forEachObject(function (id, obj) {
-        if (obj instanceof _Aviary["default"]) _this2.drawAviary(obj.physicsObj);else if (obj instanceof _Robot["default"]) _this2.drawRobot(obj.physicsObj);else if (obj instanceof _Crow["default"]) _this2.drawCrow(obj.physicsObj);
+        if (obj instanceof _Aviary["default"]) _this2.drawAviary(obj.physicsObj);else if (obj instanceof _Robot["default"]) _this2.drawRobot(obj.physicsObj);else if (obj instanceof _Crow["default"]) _this2.drawCrow(obj);
       }); // update status and restore
 
       this.updateStatus();
@@ -137,7 +142,7 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
       ctx.fillStyle = col_robot;
       ctx.translate(body.position[0], body.position[1]); // Translate to the robot center
 
-      ctx.rotate(body.angle); // Rotate to robot orientation TODO: could be interesting
+      ctx.rotate(-body.angle); // Rotate to robot orientation
       //left arm
 
       ctx.beginPath();
@@ -172,7 +177,7 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
     key: "drawAviary",
     value: function drawAviary(body) {
       ctx.save(); //ctx.translate(body.position[0], body.position[1]);  // Translate to the center
-      //ctx.rotate(body.angle);
+      //ctx.rotate(-body.angle);
 
       ctx.fillStyle = col_aviary;
       ctx.beginPath();
@@ -184,14 +189,31 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
     }
   }, {
     key: "drawCrow",
-    value: function drawCrow(body) {
+    value: function drawCrow(crow) {
+      var body = crow.physicsObj;
       ctx.save();
+      ctx.translate(body.position[0], body.position[1]); // Translate to the center
+      //crow
+
       ctx.fillStyle = col_crow;
       ctx.beginPath();
-      ctx.arc(body.position[0], body.position[1], game.crowRadius, 0, 2 * Math.PI);
+      ctx.arc(0, 0, game.crowRadius, 0, 2 * Math.PI);
       ctx.closePath();
       ctx.stroke();
-      ctx.fill();
+      ctx.fill(); //direction indicator
+
+      if (crow.messageAngle || crow.messageAngle === 0) {
+        ctx.rotate(-crow.messageAngle);
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.moveTo(-game.crowRadius / 2, 0);
+        ctx.lineTo(0, game.crowRadius);
+        ctx.lineTo(game.crowRadius / 2, 0);
+        ctx.closePath(); //ctx.stroke();
+
+        ctx.fill();
+      }
+
       ctx.restore();
     }
   }, {

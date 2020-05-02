@@ -204,7 +204,7 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       //release a crow from the aviary
       var vx = 0;
       var vy = 0;
-      var c = new _Crow["default"](this, {}, {
+      var crow = new _Crow["default"](this, {}, {
         playerId: playerAviary.playerId,
         mass: 0.0001,
         angularVelocity: 0,
@@ -212,8 +212,19 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         //is copied anyway
         velocity: new _lanceGg.TwoVector(vx, vy)
       });
-      c.message = direction;
-      this.addObjectToWorld(c);
+      crow.message = direction;
+
+      if (crow.message === 'up') {
+        crow.messageAngle = 0;
+      } else if (crow.message === 'right') {
+        crow.messageAngle = Math.PI / 2;
+      } else if (crow.message === 'left') {
+        crow.messageAngle = -Math.PI / 2;
+      } else if (crow.message === 'down') {
+        crow.messageAngle = Math.PI;
+      }
+
+      this.addObjectToWorld(crow);
     } // crow has arrived at a robot; can possibly deliver message
 
   }, {
@@ -223,16 +234,16 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         //console.log("crow delivered message " + crow.message);
         if (crow.message === 'up') {
           robot.velocity = new _lanceGg.TwoVector(0, this.robotSpeed);
-          robot.angle = 0;
+          robot.angle = crow.messageAngle;
         } else if (crow.message === 'right') {
           robot.velocity = new _lanceGg.TwoVector(this.robotSpeed, 0);
-          robot.angle = Math.PI / 2;
+          robot.angle = crow.messageAngle;
         } else if (crow.message === 'left') {
           robot.velocity = new _lanceGg.TwoVector(-this.robotSpeed, 0);
-          robot.angle = -Math.PI / 2;
+          robot.angle = crow.messageAngle;
         } else if (crow.message === 'down') {
           robot.velocity = new _lanceGg.TwoVector(0, -this.robotSpeed);
-          robot.angle = Math.PI;
+          robot.angle = crow.messageAngle;
         }
 
         robot.angularVelocity = 0;

@@ -81,6 +81,7 @@ var Crow = /*#__PURE__*/function (_PhysicalObject2D) {
       _get(_getPrototypeOf(Crow.prototype), "syncTo", this).call(this, other);
 
       this.message = other.message;
+      this.messageAngle = other.messageAngle;
     }
   }, {
     key: "toString",
@@ -108,6 +109,9 @@ var Crow = /*#__PURE__*/function (_PhysicalObject2D) {
       return Object.assign({
         message: {
           type: _lanceGg.BaseTypes.TYPES.STRING
+        },
+        messageAngle: {
+          type: _lanceGg.BaseTypes.TYPES.FLOAT32
         }
       }, _get(_getPrototypeOf(Crow), "netScheme", this));
     }

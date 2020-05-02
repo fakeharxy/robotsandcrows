@@ -134,14 +134,23 @@ export default class RoCrowsGameEngine extends GameEngine {
         let vx = 0;
         let vy = 0;
 
-        let c = new Crow(this, {}, {
+        let crow = new Crow(this, {}, {
             playerId: playerAviary.playerId,
             mass: 0.0001, angularVelocity: 0,
             position: playerAviary.position, //is copied anyway
             velocity: new TwoVector(vx, vy)
         });
-        c.message = direction;
-        this.addObjectToWorld(c);
+        crow.message = direction;
+        if (crow.message === 'up') {
+            crow.messageAngle = 0;
+        } else if (crow.message === 'right') {
+            crow.messageAngle = Math.PI / 2;
+        } else if (crow.message === 'left') {
+            crow.messageAngle = -Math.PI / 2
+        } else if (crow.message === 'down') {
+            crow.messageAngle = Math.PI;
+        }
+        this.addObjectToWorld(crow);
     }
 
     // crow has arrived at a robot; can possibly deliver message
@@ -150,16 +159,16 @@ export default class RoCrowsGameEngine extends GameEngine {
             //console.log("crow delivered message " + crow.message);
             if (crow.message === 'up') {
                 robot.velocity = new TwoVector(0, this.robotSpeed);
-                robot.angle = 0;
+                robot.angle = crow.messageAngle;
             } else if (crow.message === 'right') {
                 robot.velocity = new TwoVector(this.robotSpeed, 0);
-                robot.angle = Math.PI / 2;
+                robot.angle = crow.messageAngle;
             } else if (crow.message === 'left') {
                 robot.velocity = new TwoVector(-this.robotSpeed, 0);
-                robot.angle = -Math.PI / 2
+                robot.angle = crow.messageAngle;
             } else if (crow.message === 'down') {
                 robot.velocity = new TwoVector(0, -this.robotSpeed);
-                robot.angle = Math.PI;
+                robot.angle = crow.messageAngle;
             }
             robot.angularVelocity = 0;
             robot.refreshToPhysics();

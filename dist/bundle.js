@@ -13571,6 +13571,7 @@ var Crow = /*#__PURE__*/function (_PhysicalObject2D) {
       _get(_getPrototypeOf(Crow.prototype), "syncTo", this).call(this, other);
 
       this.message = other.message;
+      this.messageAngle = other.messageAngle;
     }
   }, {
     key: "toString",
@@ -13598,6 +13599,9 @@ var Crow = /*#__PURE__*/function (_PhysicalObject2D) {
       return Object.assign({
         message: {
           type: __WEBPACK_IMPORTED_MODULE_0_lance_gg__["BaseTypes"].TYPES.STRING
+        },
+        messageAngle: {
+          type: __WEBPACK_IMPORTED_MODULE_0_lance_gg__["BaseTypes"].TYPES.FLOAT32
         }
       }, _get(_getPrototypeOf(Crow), "netScheme", this));
     }
@@ -30734,14 +30738,19 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
       // goes from top to bottom, while physics does the opposite.
 
       ctx.save();
-      ctx.translate(game.w / 2, game.h / 2); // Translate to the center TODO: consider if this is best for RoCrows2
+      ctx.translate(game.w / 2, game.h / 2); // Translate to the center TODO: consider if this is best for RoCrows
 
       ctx.scale(game.zoom, -game.zoom); // Zoom in and flip y axis
+
+      /*
+       * Note that flipping the scale like this means all local rotations are also 'flipped'
+       * and must be entered as negative.
+       */
       // Draw all things
 
       this.drawBounds();
       game.world.forEachObject(function (id, obj) {
-        if (obj instanceof __WEBPACK_IMPORTED_MODULE_1__common_Aviary__["a" /* default */]) _this2.drawAviary(obj.physicsObj);else if (obj instanceof __WEBPACK_IMPORTED_MODULE_3__common_Robot__["a" /* default */]) _this2.drawRobot(obj.physicsObj);else if (obj instanceof __WEBPACK_IMPORTED_MODULE_2__common_Crow__["a" /* default */]) _this2.drawCrow(obj.physicsObj);
+        if (obj instanceof __WEBPACK_IMPORTED_MODULE_1__common_Aviary__["a" /* default */]) _this2.drawAviary(obj.physicsObj);else if (obj instanceof __WEBPACK_IMPORTED_MODULE_3__common_Robot__["a" /* default */]) _this2.drawRobot(obj.physicsObj);else if (obj instanceof __WEBPACK_IMPORTED_MODULE_2__common_Crow__["a" /* default */]) _this2.drawCrow(obj);
       }); // update status and restore
 
       this.updateStatus();
@@ -30781,7 +30790,7 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
       ctx.fillStyle = col_robot;
       ctx.translate(body.position[0], body.position[1]); // Translate to the robot center
 
-      ctx.rotate(body.angle); // Rotate to robot orientation TODO: could be interesting
+      ctx.rotate(-body.angle); // Rotate to robot orientation
       //left arm
 
       ctx.beginPath();
@@ -30816,7 +30825,7 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
     key: "drawAviary",
     value: function drawAviary(body) {
       ctx.save(); //ctx.translate(body.position[0], body.position[1]);  // Translate to the center
-      //ctx.rotate(body.angle);
+      //ctx.rotate(-body.angle);
 
       ctx.fillStyle = col_aviary;
       ctx.beginPath();
@@ -30828,14 +30837,31 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
     }
   }, {
     key: "drawCrow",
-    value: function drawCrow(body) {
+    value: function drawCrow(crow) {
+      var body = crow.physicsObj;
       ctx.save();
+      ctx.translate(body.position[0], body.position[1]); // Translate to the center
+      //crow
+
       ctx.fillStyle = col_crow;
       ctx.beginPath();
-      ctx.arc(body.position[0], body.position[1], game.crowRadius, 0, 2 * Math.PI);
+      ctx.arc(0, 0, game.crowRadius, 0, 2 * Math.PI);
       ctx.closePath();
       ctx.stroke();
-      ctx.fill();
+      ctx.fill(); //direction indicator
+
+      if (crow.messageAngle || crow.messageAngle === 0) {
+        ctx.rotate(-crow.messageAngle);
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.moveTo(-game.crowRadius / 2, 0);
+        ctx.lineTo(0, game.crowRadius);
+        ctx.lineTo(game.crowRadius / 2, 0);
+        ctx.closePath(); //ctx.stroke();
+
+        ctx.fill();
+      }
+
       ctx.restore();
     }
   }, {
@@ -31062,7 +31088,7 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       //release a crow from the aviary
       var vx = 0;
       var vy = 0;
-      var c = new __WEBPACK_IMPORTED_MODULE_2__Crow__["a" /* default */](this, {}, {
+      var crow = new __WEBPACK_IMPORTED_MODULE_2__Crow__["a" /* default */](this, {}, {
         playerId: playerAviary.playerId,
         mass: 0.0001,
         angularVelocity: 0,
@@ -31070,8 +31096,19 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         //is copied anyway
         velocity: new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](vx, vy)
       });
-      c.message = direction;
-      this.addObjectToWorld(c);
+      crow.message = direction;
+
+      if (crow.message === 'up') {
+        crow.messageAngle = 0;
+      } else if (crow.message === 'right') {
+        crow.messageAngle = Math.PI / 2;
+      } else if (crow.message === 'left') {
+        crow.messageAngle = -Math.PI / 2;
+      } else if (crow.message === 'down') {
+        crow.messageAngle = Math.PI;
+      }
+
+      this.addObjectToWorld(crow);
     } // crow has arrived at a robot; can possibly deliver message
 
   }, {
@@ -31081,16 +31118,16 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         //console.log("crow delivered message " + crow.message);
         if (crow.message === 'up') {
           robot.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](0, this.robotSpeed);
-          robot.angle = 0;
+          robot.angle = crow.messageAngle;
         } else if (crow.message === 'right') {
           robot.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](this.robotSpeed, 0);
-          robot.angle = Math.PI / 2;
+          robot.angle = crow.messageAngle;
         } else if (crow.message === 'left') {
           robot.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](-this.robotSpeed, 0);
-          robot.angle = -Math.PI / 2;
+          robot.angle = crow.messageAngle;
         } else if (crow.message === 'down') {
           robot.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](0, -this.robotSpeed);
-          robot.angle = Math.PI;
+          robot.angle = crow.messageAngle;
         }
 
         robot.angularVelocity = 0;

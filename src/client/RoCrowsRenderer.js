@@ -44,15 +44,19 @@ export default class RoCrowsRenderer extends Renderer {
         // Note that we need to flip the y axis since Canvas pixel coordinates
         // goes from top to bottom, while physics does the opposite.
         ctx.save();
-        ctx.translate(game.w/2, game.h/2); // Translate to the center TODO: consider if this is best for RoCrows2
+        ctx.translate(game.w/2, game.h/2); // Translate to the center TODO: consider if this is best for RoCrows
         ctx.scale(game.zoom, -game.zoom);  // Zoom in and flip y axis
+        /*
+         * Note that flipping the scale like this means all local rotations are also 'flipped'
+         * and must be entered as negative.
+         */
 
         // Draw all things
         this.drawBounds();
         game.world.forEachObject((id, obj) => {
             if (obj instanceof Aviary) this.drawAviary(obj.physicsObj);
             else if (obj instanceof Robot) this.drawRobot(obj.physicsObj);
-            else if (obj instanceof Crow) this.drawCrow(obj.physicsObj);
+            else if (obj instanceof Crow) this.drawCrow(obj);
         });
 
         // update status and restore
@@ -88,7 +92,7 @@ export default class RoCrowsRenderer extends Renderer {
         ctx.save();
         ctx.fillStyle = col_robot;
         ctx.translate(body.position[0], body.position[1]); // Translate to the robot center
-        ctx.rotate(body.angle); // Rotate to robot orientation TODO: could be interesting
+        ctx.rotate(-body.angle); // Rotate to robot orientation
         
         //left arm
         ctx.beginPath();
@@ -127,7 +131,7 @@ export default class RoCrowsRenderer extends Renderer {
     drawAviary(body) {
         ctx.save();
         //ctx.translate(body.position[0], body.position[1]);  // Translate to the center
-        //ctx.rotate(body.angle);
+        //ctx.rotate(-body.angle);
         ctx.fillStyle = col_aviary;
         ctx.beginPath();
         ctx.arc(body.position[0], body.position[1], game.aviaryRadius, 0, 2*Math.PI);
@@ -137,14 +141,32 @@ export default class RoCrowsRenderer extends Renderer {
         ctx.restore();
     }
 
-    drawCrow(body) {
+    drawCrow(crow) {
+        let body = crow.physicsObj;
         ctx.save();
+        ctx.translate(body.position[0], body.position[1]);  // Translate to the center
+
+        //crow
         ctx.fillStyle = col_crow;
         ctx.beginPath();
-        ctx.arc(body.position[0], body.position[1], game.crowRadius, 0, 2*Math.PI);
+        ctx.arc(0, 0, game.crowRadius, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.stroke();
         ctx.fill();
+        
+        //direction indicator
+        if (crow.messageAngle || crow.messageAngle === 0) {
+            ctx.rotate(-crow.messageAngle);
+            ctx.fillStyle = "#000";
+            ctx.beginPath();
+            ctx.moveTo(-game.crowRadius / 2, 0);
+            ctx.lineTo(0, game.crowRadius);
+            ctx.lineTo(game.crowRadius / 2, 0);
+            ctx.closePath();
+            //ctx.stroke();
+            ctx.fill();
+        }
+
         ctx.restore();
     }
 

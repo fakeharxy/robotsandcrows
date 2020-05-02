@@ -7,7 +7,8 @@ export default class Crow extends PhysicalObject2D {
 
     static get netScheme() {
         return Object.assign({
-            message: { type: BaseTypes.TYPES.STRING }
+            message: { type: BaseTypes.TYPES.STRING },
+            messageAngle: { type: BaseTypes.TYPES.FLOAT32 }
         }, super.netScheme);
     }
 
@@ -48,6 +49,7 @@ export default class Crow extends PhysicalObject2D {
     syncTo(other) {
         super.syncTo(other);
         this.message = other.message;
+        this.messageAngle = other.messageAngle;
     }
 
     toString() {

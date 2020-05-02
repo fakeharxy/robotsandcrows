@@ -55,7 +55,7 @@ export default class RoCrowsRenderer extends Renderer {
         this.drawBounds();
         game.world.forEachObject((id, obj) => {
             if (obj instanceof Aviary) this.drawAviary(obj.physicsObj);
-            else if (obj instanceof Robot) this.drawRobot(obj.physicsObj);
+            else if (obj instanceof Robot) this.drawRobot(obj);
             else if (obj instanceof Crow) this.drawCrow(obj);
         });
 
@@ -86,9 +86,12 @@ export default class RoCrowsRenderer extends Renderer {
         document.getElementById('instructionsMobile').classList.add('hidden');
     }
 
-    drawRobot(body) {
+    drawRobot(robot) {
+        let body = robot.physicsObj;
+
         let size = 0.5 * body.shapes[0].width; // width and height are the same; robot is square
         let armSize = size * 0.4;
+        let armLength = robot.grabberActive ? size * 2 : armSize;
         ctx.save();
         ctx.fillStyle = col_robot;
         ctx.translate(body.position[0], body.position[1]); // Translate to the robot center
@@ -98,8 +101,8 @@ export default class RoCrowsRenderer extends Renderer {
         ctx.beginPath();
         ctx.moveTo(-size        , -armSize);
         ctx.lineTo(-size-armSize, -armSize);
-        ctx.lineTo(-size-armSize,  armSize);
-        ctx.lineTo(-size        ,  armSize);
+        ctx.lineTo(-size-armSize,  armLength);
+        ctx.lineTo(-size        ,  armLength);
         ctx.closePath();
         ctx.stroke();
         ctx.fill();
@@ -108,8 +111,8 @@ export default class RoCrowsRenderer extends Renderer {
         ctx.beginPath();
         ctx.moveTo( size        , -armSize);
         ctx.lineTo( size+armSize, -armSize);
-        ctx.lineTo( size+armSize,  armSize);
-        ctx.lineTo( size        ,  armSize);
+        ctx.lineTo( size+armSize,  armLength);
+        ctx.lineTo( size        ,  armLength);
         ctx.closePath();
         ctx.stroke();
         ctx.fill();

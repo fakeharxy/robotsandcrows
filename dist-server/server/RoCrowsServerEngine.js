@@ -101,14 +101,20 @@ var RoCrowsServerEngine = /*#__PURE__*/function (_ServerEngine) {
     }
   }, {
     key: "releaseCrow",
-    value: function releaseCrow(aviary, message) {
-      if (message === 'up' || message === 'right' || message === 'left' || message === 'down') {
-        //console.log("player " + aviary.playerId + " sends a crow with the message " + message);
-        this.gameEngine.addCrow(aviary, message);
-      } else if (message === 'space') {
-        console.log("player " + aviary.playerId + " pressed space [not implemented]");
-      }
+    value: function releaseCrow(aviary, key) {
+      //console.log("player " + aviary.playerId + " pressed " + key);
+      this.gameEngine.addCrow(aviary, key);
     }
+    /* is this necessary ??
+    cancelGrab(robotId) {
+        console.log('cancelling grab for robot ' + robotId);
+        let robot = this.gameEngine.world.queryObject({ id: robotId });
+        if (robot && robot instanceof Robot) {
+            robot.
+        }
+    }
+    */
+
   }, {
     key: "onPlayerConnected",
     value: function onPlayerConnected(socket) {

@@ -102,7 +102,7 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
 
       this.drawBounds();
       game.world.forEachObject(function (id, obj) {
-        if (obj instanceof _Aviary["default"]) _this2.drawAviary(obj.physicsObj);else if (obj instanceof _Robot["default"]) _this2.drawRobot(obj.physicsObj);else if (obj instanceof _Crow["default"]) _this2.drawCrow(obj);
+        if (obj instanceof _Aviary["default"]) _this2.drawAviary(obj.physicsObj);else if (obj instanceof _Robot["default"]) _this2.drawRobot(obj);else if (obj instanceof _Crow["default"]) _this2.drawCrow(obj);
       }); // update status and restore
 
       this.updateStatus();
@@ -134,10 +134,12 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
     }
   }, {
     key: "drawRobot",
-    value: function drawRobot(body) {
+    value: function drawRobot(robot) {
+      var body = robot.physicsObj;
       var size = 0.5 * body.shapes[0].width; // width and height are the same; robot is square
 
       var armSize = size * 0.4;
+      var armLength = robot.grabberActive ? size * 2 : armSize;
       ctx.save();
       ctx.fillStyle = col_robot;
       ctx.translate(body.position[0], body.position[1]); // Translate to the robot center
@@ -148,8 +150,8 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
       ctx.beginPath();
       ctx.moveTo(-size, -armSize);
       ctx.lineTo(-size - armSize, -armSize);
-      ctx.lineTo(-size - armSize, armSize);
-      ctx.lineTo(-size, armSize);
+      ctx.lineTo(-size - armSize, armLength);
+      ctx.lineTo(-size, armLength);
       ctx.closePath();
       ctx.stroke();
       ctx.fill(); //right arm
@@ -157,8 +159,8 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
       ctx.beginPath();
       ctx.moveTo(size, -armSize);
       ctx.lineTo(size + armSize, -armSize);
-      ctx.lineTo(size + armSize, armSize);
-      ctx.lineTo(size, armSize);
+      ctx.lineTo(size + armSize, armLength);
+      ctx.lineTo(size, armLength);
       ctx.closePath();
       ctx.stroke();
       ctx.fill(); //body

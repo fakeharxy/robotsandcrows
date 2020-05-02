@@ -5,13 +5,11 @@ let p2 = null;
 
 export default class Robot extends PhysicalObject2D {
 
-    /* no netScheme required yet
     static get netScheme() {
         return Object.assign({
-            lives: { type: BaseTypes.TYPES.INT8 }
+            grabberActive: { type: BaseTypes.TYPES.INT8 }
         }, super.netScheme);
     }
-    */
    
     // no position bending if difference is larger than 4.0 (i.e. wrap beyond bounds),
     // TODO which is needed? no angular velocity bending, no local angle bending
@@ -54,5 +52,6 @@ export default class Robot extends PhysicalObject2D {
     syncTo(other) {
         super.syncTo(other);
         //this.lives = other.lives;
+        this.grabberActive = other.grabberActive;
     }
 }

@@ -13700,17 +13700,11 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
     value: function syncTo(other) {
       _get(_getPrototypeOf(Robot.prototype), "syncTo", this).call(this, other); //this.lives = other.lives;
 
+
+      this.grabberActive = other.grabberActive;
     }
   }, {
     key: "bending",
-
-    /* no netScheme required yet
-    static get netScheme() {
-        return Object.assign({
-            lives: { type: BaseTypes.TYPES.INT8 }
-        }, super.netScheme);
-    }
-    */
     // no position bending if difference is larger than 4.0 (i.e. wrap beyond bounds),
     // TODO which is needed? no angular velocity bending, no local angle bending
     get: function get() {
@@ -13721,6 +13715,15 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
         //angleLocal: { percent: 0.0 }
 
       };
+    }
+  }], [{
+    key: "netScheme",
+    get: function get() {
+      return Object.assign({
+        grabberActive: {
+          type: __WEBPACK_IMPORTED_MODULE_0_lance_gg__["BaseTypes"].TYPES.INT8
+        }
+      }, _get(_getPrototypeOf(Robot), "netScheme", this));
     }
   }]);
 
@@ -30750,7 +30753,7 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
 
       this.drawBounds();
       game.world.forEachObject(function (id, obj) {
-        if (obj instanceof __WEBPACK_IMPORTED_MODULE_1__common_Aviary__["a" /* default */]) _this2.drawAviary(obj.physicsObj);else if (obj instanceof __WEBPACK_IMPORTED_MODULE_3__common_Robot__["a" /* default */]) _this2.drawRobot(obj.physicsObj);else if (obj instanceof __WEBPACK_IMPORTED_MODULE_2__common_Crow__["a" /* default */]) _this2.drawCrow(obj);
+        if (obj instanceof __WEBPACK_IMPORTED_MODULE_1__common_Aviary__["a" /* default */]) _this2.drawAviary(obj.physicsObj);else if (obj instanceof __WEBPACK_IMPORTED_MODULE_3__common_Robot__["a" /* default */]) _this2.drawRobot(obj);else if (obj instanceof __WEBPACK_IMPORTED_MODULE_2__common_Crow__["a" /* default */]) _this2.drawCrow(obj);
       }); // update status and restore
 
       this.updateStatus();
@@ -30782,10 +30785,12 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
     }
   }, {
     key: "drawRobot",
-    value: function drawRobot(body) {
+    value: function drawRobot(robot) {
+      var body = robot.physicsObj;
       var size = 0.5 * body.shapes[0].width; // width and height are the same; robot is square
 
       var armSize = size * 0.4;
+      var armLength = robot.grabberActive ? size * 2 : armSize;
       ctx.save();
       ctx.fillStyle = col_robot;
       ctx.translate(body.position[0], body.position[1]); // Translate to the robot center
@@ -30796,8 +30801,8 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
       ctx.beginPath();
       ctx.moveTo(-size, -armSize);
       ctx.lineTo(-size - armSize, -armSize);
-      ctx.lineTo(-size - armSize, armSize);
-      ctx.lineTo(-size, armSize);
+      ctx.lineTo(-size - armSize, armLength);
+      ctx.lineTo(-size, armLength);
       ctx.closePath();
       ctx.stroke();
       ctx.fill(); //right arm
@@ -30805,8 +30810,8 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
       ctx.beginPath();
       ctx.moveTo(size, -armSize);
       ctx.lineTo(size + armSize, -armSize);
-      ctx.lineTo(size + armSize, armSize);
-      ctx.lineTo(size, armSize);
+      ctx.lineTo(size + armSize, armLength);
+      ctx.lineTo(size, armLength);
       ctx.closePath();
       ctx.stroke();
       ctx.fill(); //body
@@ -30958,8 +30963,9 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       aviaryRadius: 0.1,
       crowRadius: 0.06,
       robotSize: 0.2,
-      crowSpeed: 1,
+      crowSpeed: 1.5,
       robotSpeed: 0.5,
+      grabDuration: 120,
       // collision groups
       ROBOT: Math.pow(2, 1),
       CROW: Math.pow(2, 2),
@@ -31003,10 +31009,10 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
 
       this.world.forEachObject(function (id, obj) {
         var p = obj.position;
-        if (p.x > _this3.spaceWidth / 2) p.x = -_this3.spaceWidth / 2;
-        if (p.y > _this3.spaceHeight / 2) p.y = -_this3.spaceHeight / 2;
-        if (p.x < -_this3.spaceWidth / 2) p.x = _this3.spaceWidth / 2;
-        if (p.y < -_this3.spaceHeight / 2) p.y = _this3.spaceHeight / 2;
+        if (p.x > _this3.spaceWidth / 2) p.x -= _this3.spaceWidth;
+        if (p.y > _this3.spaceHeight / 2) p.y -= _this3.spaceHeight;
+        if (p.x < -_this3.spaceWidth / 2) p.x += _this3.spaceWidth;
+        if (p.y < -_this3.spaceHeight / 2) p.y += _this3.spaceHeight;
         obj.refreshToPhysics();
       });
     }
@@ -31084,7 +31090,7 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
     }
   }, {
     key: "addCrow",
-    value: function addCrow(playerAviary, direction) {
+    value: function addCrow(playerAviary, key) {
       //release a crow from the aviary
       var vx = 0;
       var vy = 0;
@@ -31096,7 +31102,7 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         //is copied anyway
         velocity: new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](vx, vy)
       });
-      crow.message = direction;
+      crow.message = key;
 
       if (crow.message === 'up') {
         crow.messageAngle = 0;
@@ -31128,6 +31134,11 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         } else if (crow.message === 'down') {
           robot.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](0, -this.robotSpeed);
           robot.angle = crow.messageAngle;
+        } else if (crow.message === 'space') {
+          if (!robot.grabberActive) {
+            robot.grabberActive = true;
+            this.timer.add(this.grabDuration, this.cancelGrab, this, [robot.id]);
+          }
         }
 
         robot.angularVelocity = 0;
@@ -31135,6 +31146,18 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         this.removeObjectFromWorld(crow.id);
       } else {
         console.log("crow flew over competitor robot");
+      }
+    }
+  }, {
+    key: "cancelGrab",
+    value: function cancelGrab(robotId) {
+      //this.emit('cancelGrab', robotId); // is it necessary to emit this??
+      var robot = this.world.queryObject({
+        id: robotId
+      });
+
+      if (robot && robot instanceof __WEBPACK_IMPORTED_MODULE_3__Robot__["a" /* default */]) {
+        robot.grabberActive = false;
       }
     } // two robots have hit each other TODO dead stop? bounce? damage?
 

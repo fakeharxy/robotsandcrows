@@ -86,17 +86,11 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
     value: function syncTo(other) {
       _get(_getPrototypeOf(Robot.prototype), "syncTo", this).call(this, other); //this.lives = other.lives;
 
+
+      this.grabberActive = other.grabberActive;
     }
   }, {
     key: "bending",
-
-    /* no netScheme required yet
-    static get netScheme() {
-        return Object.assign({
-            lives: { type: BaseTypes.TYPES.INT8 }
-        }, super.netScheme);
-    }
-    */
     // no position bending if difference is larger than 4.0 (i.e. wrap beyond bounds),
     // TODO which is needed? no angular velocity bending, no local angle bending
     get: function get() {
@@ -107,6 +101,15 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
         //angleLocal: { percent: 0.0 }
 
       };
+    }
+  }], [{
+    key: "netScheme",
+    get: function get() {
+      return Object.assign({
+        grabberActive: {
+          type: _lanceGg.BaseTypes.TYPES.INT8
+        }
+      }, _get(_getPrototypeOf(Robot), "netScheme", this));
     }
   }]);
 

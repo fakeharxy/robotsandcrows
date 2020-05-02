@@ -74,8 +74,9 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       aviaryRadius: 0.1,
       crowRadius: 0.06,
       robotSize: 0.2,
-      crowSpeed: 1,
+      crowSpeed: 1.5,
       robotSpeed: 0.5,
+      grabDuration: 120,
       // collision groups
       ROBOT: Math.pow(2, 1),
       CROW: Math.pow(2, 2),
@@ -119,10 +120,10 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
 
       this.world.forEachObject(function (id, obj) {
         var p = obj.position;
-        if (p.x > _this3.spaceWidth / 2) p.x = -_this3.spaceWidth / 2;
-        if (p.y > _this3.spaceHeight / 2) p.y = -_this3.spaceHeight / 2;
-        if (p.x < -_this3.spaceWidth / 2) p.x = _this3.spaceWidth / 2;
-        if (p.y < -_this3.spaceHeight / 2) p.y = _this3.spaceHeight / 2;
+        if (p.x > _this3.spaceWidth / 2) p.x -= _this3.spaceWidth;
+        if (p.y > _this3.spaceHeight / 2) p.y -= _this3.spaceHeight;
+        if (p.x < -_this3.spaceWidth / 2) p.x += _this3.spaceWidth;
+        if (p.y < -_this3.spaceHeight / 2) p.y += _this3.spaceHeight;
         obj.refreshToPhysics();
       });
     }
@@ -200,7 +201,7 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
     }
   }, {
     key: "addCrow",
-    value: function addCrow(playerAviary, direction) {
+    value: function addCrow(playerAviary, key) {
       //release a crow from the aviary
       var vx = 0;
       var vy = 0;
@@ -212,7 +213,7 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         //is copied anyway
         velocity: new _lanceGg.TwoVector(vx, vy)
       });
-      crow.message = direction;
+      crow.message = key;
 
       if (crow.message === 'up') {
         crow.messageAngle = 0;
@@ -244,6 +245,11 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         } else if (crow.message === 'down') {
           robot.velocity = new _lanceGg.TwoVector(0, -this.robotSpeed);
           robot.angle = crow.messageAngle;
+        } else if (crow.message === 'space') {
+          if (!robot.grabberActive) {
+            robot.grabberActive = true;
+            this.timer.add(this.grabDuration, this.cancelGrab, this, [robot.id]);
+          }
         }
 
         robot.angularVelocity = 0;
@@ -251,6 +257,18 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
         this.removeObjectFromWorld(crow.id);
       } else {
         console.log("crow flew over competitor robot");
+      }
+    }
+  }, {
+    key: "cancelGrab",
+    value: function cancelGrab(robotId) {
+      //this.emit('cancelGrab', robotId); // is it necessary to emit this??
+      var robot = this.world.queryObject({
+        id: robotId
+      });
+
+      if (robot && robot instanceof _Robot["default"]) {
+        robot.grabberActive = false;
       }
     } // two robots have hit each other TODO dead stop? bounce? damage?
 

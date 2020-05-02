@@ -29,8 +29,10 @@ export default class RoCrowsGameEngine extends GameEngine {
             crowRadius: 0.06,
             robotSize: 0.2,
 
-            crowSpeed: 1,
+            crowSpeed: 1.5,
             robotSpeed: 0.5,
+
+            grabDuration: 120,
 
             // collision groups
             ROBOT: Math.pow(2, 1), CROW: Math.pow(2, 2), AVIARY: Math.pow(2, 3),
@@ -60,10 +62,10 @@ export default class RoCrowsGameEngine extends GameEngine {
     warpAll() {
         this.world.forEachObject((id, obj) => {
             let p = obj.position;
-            if(p.x > this.spaceWidth/2) p.x = -this.spaceWidth/2;
-            if(p.y > this.spaceHeight/2) p.y = -this.spaceHeight/2;
-            if(p.x < -this.spaceWidth /2) p.x = this.spaceWidth/2;
-            if(p.y < -this.spaceHeight/2) p.y = this.spaceHeight/2;
+            if(p.x > this.spaceWidth/2) p.x -= this.spaceWidth;
+            if(p.y > this.spaceHeight/2) p.y -= this.spaceHeight;
+            if(p.x < -this.spaceWidth /2) p.x += this.spaceWidth;
+            if(p.y < -this.spaceHeight/2) p.y += this.spaceHeight;
             obj.refreshToPhysics();
         });
     }
@@ -129,7 +131,7 @@ export default class RoCrowsGameEngine extends GameEngine {
         this.addObjectToWorld(s);
     }
     
-    addCrow(playerAviary, direction) {
+    addCrow(playerAviary, key) {
         //release a crow from the aviary
         let vx = 0;
         let vy = 0;
@@ -140,7 +142,7 @@ export default class RoCrowsGameEngine extends GameEngine {
             position: playerAviary.position, //is copied anyway
             velocity: new TwoVector(vx, vy)
         });
-        crow.message = direction;
+        crow.message = key;
         if (crow.message === 'up') {
             crow.messageAngle = 0;
         } else if (crow.message === 'right') {
@@ -169,12 +171,27 @@ export default class RoCrowsGameEngine extends GameEngine {
             } else if (crow.message === 'down') {
                 robot.velocity = new TwoVector(0, -this.robotSpeed);
                 robot.angle = crow.messageAngle;
+
+            } else if (crow.message === 'space') {
+                if (!robot.grabberActive) {
+                    robot.grabberActive = true;
+                    this.timer.add(this.grabDuration, this.cancelGrab, this, [robot.id]);
+                }  
             }
+
             robot.angularVelocity = 0;
             robot.refreshToPhysics();
             this.removeObjectFromWorld(crow.id);
         } else {
             console.log("crow flew over competitor robot");
+        }
+    }
+
+    cancelGrab(robotId) {
+        //this.emit('cancelGrab', robotId); // is it necessary to emit this??
+        let robot = this.world.queryObject({ id: robotId });
+        if (robot && robot instanceof Robot) {
+            robot.grabberActive = false;
         }
     }
 

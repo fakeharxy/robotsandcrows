@@ -32,9 +32,15 @@ export default class RoCrowsServerEngine extends ServerEngine {
         if (!A || !B) return;
         this.gameEngine.trace.trace(() => `collision between A=${A.toString()}`);
         this.gameEngine.trace.trace(() => `collision and     B=${B.toString()}`);
-        if (B instanceof Robot && A instanceof Robot) this.gameEngine.robotCrash(A, B);
+        
         if (A instanceof Crow && B instanceof Robot) this.gameEngine.crowArrived(A, B);
         if (B instanceof Crow && A instanceof Robot) this.gameEngine.crowArrived(B, A);
+
+        if (A instanceof Robot && B instanceof Aviary) this.gameEngine.checkGrab(A, B);
+        if (A instanceof Aviary && B instanceof Robot) this.gameEngine.checkGrab(B, A);
+        
+        if (B instanceof Robot && A instanceof Robot) this.gameEngine.robotCrash(A, B);
+        
         //if (A instanceof Robot && B instanceof Asteroid) this.kill(A);
         //if (B instanceof Robot && A instanceof Asteroid) this.kill(B);
 
@@ -58,7 +64,7 @@ export default class RoCrowsServerEngine extends ServerEngine {
         }
     }
     */
-   
+
     onPlayerConnected(socket) {
         super.onPlayerConnected(socket);
         this.gameEngine.addAviary(socket.playerId);

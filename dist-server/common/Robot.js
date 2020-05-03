@@ -33,6 +33,9 @@ function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Re
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
+var GRAB_INACTIVE = 0;
+var GRAB_SEARCHING = 1;
+var GRAB_HOLDING = 2;
 var game = null;
 var p2 = null;
 
@@ -51,7 +54,8 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
     key: "onAddToWorld",
     value: function onAddToWorld(gameEngine) {
       game = gameEngine;
-      p2 = gameEngine.physicsEngine.p2; // Add robot physics
+      p2 = gameEngine.physicsEngine.p2;
+      this.grabState = GRAB_INACTIVE; // Add robot physics
 
       this.shape = new p2.Box({
         width: game.robotSize,
@@ -77,6 +81,64 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
       game.physicsEngine.world.removeBody(this.physicsObj);
     }
   }, {
+    key: "updateGrabbedObject",
+    value: function updateGrabbedObject() {
+      //also update position and velocity of grabbed object
+      if (this.grabbedObject) {
+        var grabVector = new _lanceGg.TwoVector(this.physicsObj.position[0] + game.grabReach * Math.sin(this.physicsObj.angle), this.physicsObj.position[1] + game.grabReach * Math.cos(this.physicsObj.angle));
+        this.grabbedObject.position = grabVector;
+        this.grabbedObject.velocity.copy(this.velocity);
+        this.grabbedObject.refreshToPhysics();
+      }
+    }
+  }, {
+    key: "setGrabInactive",
+    value: function setGrabInactive() {
+      this.grabState = GRAB_INACTIVE;
+
+      if (this.grabConstraint) {
+        game.physicsEngine.world.removeConstraint(this.grabConstraint);
+      }
+
+      if (this.grabbedObject) {
+        this.grabbedObject.velocity = new _lanceGg.TwoVector(0, 0);
+        this.grabbedObject.refreshToPhysics();
+        this.grabbedObject = undefined;
+      }
+    }
+  }, {
+    key: "setGrabSearching",
+    value: function setGrabSearching() {
+      this.grabState = GRAB_SEARCHING;
+    }
+  }, {
+    key: "setGrabHolding",
+    value: function setGrabHolding(object) {
+      this.grabState = GRAB_HOLDING;
+      this.grabbedObject = object;
+      this.updateGrabbedObject(); //snap the grabbed object to its correct position
+
+      this.grabConstraint = new game.physicsEngine.p2.DistanceConstraint(this.physicsObj, object.physicsObj, {
+        collideConnected: false
+      });
+      game.physicsEngine.world.addConstraint(this.grabConstraint);
+    }
+  }, {
+    key: "isGrabInactive",
+    value: function isGrabInactive() {
+      return this.grabState === GRAB_INACTIVE;
+    }
+  }, {
+    key: "isGrabSearching",
+    value: function isGrabSearching() {
+      return this.grabState === GRAB_SEARCHING;
+    }
+  }, {
+    key: "isGrabHolding",
+    value: function isGrabHolding() {
+      return this.grabState === GRAB_HOLDING;
+    }
+  }, {
     key: "toString",
     value: function toString() {
       return "Robot::".concat(_get(_getPrototypeOf(Robot.prototype), "toString", this).call(this), " lives=").concat(this.lives);
@@ -87,7 +149,7 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
       _get(_getPrototypeOf(Robot.prototype), "syncTo", this).call(this, other); //this.lives = other.lives;
 
 
-      this.grabberActive = other.grabberActive;
+      this.grabState = other.grabState;
     }
   }, {
     key: "bending",
@@ -106,7 +168,7 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
     key: "netScheme",
     get: function get() {
       return Object.assign({
-        grabberActive: {
+        grabState: {
           type: _lanceGg.BaseTypes.TYPES.INT8
         }
       }, _get(_getPrototypeOf(Robot), "netScheme", this));

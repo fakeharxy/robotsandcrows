@@ -91,7 +91,7 @@ export default class RoCrowsRenderer extends Renderer {
 
         let size = 0.5 * body.shapes[0].width; // width and height are the same; robot is square
         let armSize = size * 0.4;
-        let armLength = robot.grabberActive ? size * 2 : armSize;
+        let armLength = !robot.isGrabInactive() ? size * 2 : armSize;
         ctx.save();
         ctx.fillStyle = col_robot;
         ctx.translate(body.position[0], body.position[1]); // Translate to the robot center
@@ -127,8 +127,28 @@ export default class RoCrowsRenderer extends Renderer {
         ctx.stroke();
         ctx.fill();
 
+        /*
+        //debug A - grab point
+        ctx.fillStyle = "#F55";
+        ctx.beginPath();
+        ctx.arc(0, game.grabReach, game.robotSize / 10, 0, 2 * Math.PI, true);
+        ctx.closePath();
+        ctx.fill();
+        //end debug A
+        */
         ctx.restore();
 
+        /*debug B - grab point as calculated
+        let grabVector = { x: body.position[0] + game.grabReach * Math.sin(body.angle), y:body.position[1] + game.grabReach * Math.cos(body.angle) };
+        ctx.save();
+        ctx.fillStyle = "#55F";
+        ctx.beginPath();
+        ctx.arc(grabVector.x, grabVector.y, game.robotSize / 10, 0, 2 * Math.PI, true);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        //end debug B
+        */
     }
 
     drawAviary(body) {

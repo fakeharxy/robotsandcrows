@@ -1,4 +1,8 @@
-import { PhysicalObject2D, BaseTypes } from 'lance-gg';
+import { PhysicalObject2D, BaseTypes, TwoVector } from 'lance-gg';
+
+const GRAB_INACTIVE = 0;
+const GRAB_SEARCHING = 1;
+const GRAB_HOLDING = 2;
 
 let game = null;
 let p2 = null;
@@ -7,7 +11,7 @@ export default class Robot extends PhysicalObject2D {
 
     static get netScheme() {
         return Object.assign({
-            grabberActive: { type: BaseTypes.TYPES.INT8 }
+            grabState: { type: BaseTypes.TYPES.INT8 }
         }, super.netScheme);
     }
    
@@ -24,6 +28,8 @@ export default class Robot extends PhysicalObject2D {
     onAddToWorld(gameEngine) {
         game = gameEngine;
         p2 = gameEngine.physicsEngine.p2;
+
+        this.grabState = GRAB_INACTIVE;
 
         // Add robot physics
         this.shape = new p2.Box({
@@ -45,6 +51,55 @@ export default class Robot extends PhysicalObject2D {
         game.physicsEngine.world.removeBody(this.physicsObj);
     }
 
+    updateGrabbedObject() {
+        //also update position and velocity of grabbed object
+        if (this.grabbedObject) {
+            let grabVector = new TwoVector(this.physicsObj.position[0] + game.grabReach * Math.sin(this.physicsObj.angle), this.physicsObj.position[1] + game.grabReach * Math.cos(this.physicsObj.angle));
+            this.grabbedObject.position = grabVector;
+            this.grabbedObject.velocity.copy(this.velocity);
+            this.grabbedObject.refreshToPhysics();
+        }
+    }
+
+    setGrabInactive() {
+        this.grabState = GRAB_INACTIVE;
+
+        if (this.grabConstraint) {
+            game.physicsEngine.world.removeConstraint(this.grabConstraint);
+        }
+
+        if (this.grabbedObject) {
+            this.grabbedObject.velocity = new TwoVector(0,0);
+            this.grabbedObject.refreshToPhysics();
+            this.grabbedObject = undefined;
+        }
+    }
+    
+    setGrabSearching() {
+        this.grabState = GRAB_SEARCHING;
+    }
+
+    setGrabHolding(object) {
+        this.grabState = GRAB_HOLDING;
+        this.grabbedObject = object;
+        this.updateGrabbedObject(); //snap the grabbed object to its correct position
+        this.grabConstraint = new game.physicsEngine.p2.DistanceConstraint(this.physicsObj, object.physicsObj, { collideConnected: false} );
+        game.physicsEngine.world.addConstraint(this.grabConstraint);
+    }
+
+    isGrabInactive() {
+        return this.grabState === GRAB_INACTIVE;
+    }
+
+    isGrabSearching() {
+        return this.grabState === GRAB_SEARCHING;
+    }
+
+    isGrabHolding() {
+        return this.grabState === GRAB_HOLDING;
+    }
+
+
     toString() {
         return `Robot::${super.toString()} lives=${this.lives}`;
     }
@@ -52,6 +107,6 @@ export default class Robot extends PhysicalObject2D {
     syncTo(other) {
         super.syncTo(other);
         //this.lives = other.lives;
-        this.grabberActive = other.grabberActive;
+        this.grabState = other.grabState;
     }
 }

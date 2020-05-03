@@ -13647,6 +13647,9 @@ function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Re
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
 
+var GRAB_INACTIVE = 0;
+var GRAB_SEARCHING = 1;
+var GRAB_HOLDING = 2;
 var game = null;
 var p2 = null;
 
@@ -13665,7 +13668,8 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
     key: "onAddToWorld",
     value: function onAddToWorld(gameEngine) {
       game = gameEngine;
-      p2 = gameEngine.physicsEngine.p2; // Add robot physics
+      p2 = gameEngine.physicsEngine.p2;
+      this.grabState = GRAB_INACTIVE; // Add robot physics
 
       this.shape = new p2.Box({
         width: game.robotSize,
@@ -13691,6 +13695,64 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
       game.physicsEngine.world.removeBody(this.physicsObj);
     }
   }, {
+    key: "updateGrabbedObject",
+    value: function updateGrabbedObject() {
+      //also update position and velocity of grabbed object
+      if (this.grabbedObject) {
+        var grabVector = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](this.physicsObj.position[0] + game.grabReach * Math.sin(this.physicsObj.angle), this.physicsObj.position[1] + game.grabReach * Math.cos(this.physicsObj.angle));
+        this.grabbedObject.position = grabVector;
+        this.grabbedObject.velocity.copy(this.velocity);
+        this.grabbedObject.refreshToPhysics();
+      }
+    }
+  }, {
+    key: "setGrabInactive",
+    value: function setGrabInactive() {
+      this.grabState = GRAB_INACTIVE;
+
+      if (this.grabConstraint) {
+        game.physicsEngine.world.removeConstraint(this.grabConstraint);
+      }
+
+      if (this.grabbedObject) {
+        this.grabbedObject.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](0, 0);
+        this.grabbedObject.refreshToPhysics();
+        this.grabbedObject = undefined;
+      }
+    }
+  }, {
+    key: "setGrabSearching",
+    value: function setGrabSearching() {
+      this.grabState = GRAB_SEARCHING;
+    }
+  }, {
+    key: "setGrabHolding",
+    value: function setGrabHolding(object) {
+      this.grabState = GRAB_HOLDING;
+      this.grabbedObject = object;
+      this.updateGrabbedObject(); //snap the grabbed object to its correct position
+
+      this.grabConstraint = new game.physicsEngine.p2.DistanceConstraint(this.physicsObj, object.physicsObj, {
+        collideConnected: false
+      });
+      game.physicsEngine.world.addConstraint(this.grabConstraint);
+    }
+  }, {
+    key: "isGrabInactive",
+    value: function isGrabInactive() {
+      return this.grabState === GRAB_INACTIVE;
+    }
+  }, {
+    key: "isGrabSearching",
+    value: function isGrabSearching() {
+      return this.grabState === GRAB_SEARCHING;
+    }
+  }, {
+    key: "isGrabHolding",
+    value: function isGrabHolding() {
+      return this.grabState === GRAB_HOLDING;
+    }
+  }, {
     key: "toString",
     value: function toString() {
       return "Robot::".concat(_get(_getPrototypeOf(Robot.prototype), "toString", this).call(this), " lives=").concat(this.lives);
@@ -13701,7 +13763,7 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
       _get(_getPrototypeOf(Robot.prototype), "syncTo", this).call(this, other); //this.lives = other.lives;
 
 
-      this.grabberActive = other.grabberActive;
+      this.grabState = other.grabState;
     }
   }, {
     key: "bending",
@@ -13720,7 +13782,7 @@ var Robot = /*#__PURE__*/function (_PhysicalObject2D) {
     key: "netScheme",
     get: function get() {
       return Object.assign({
-        grabberActive: {
+        grabState: {
           type: __WEBPACK_IMPORTED_MODULE_0_lance_gg__["BaseTypes"].TYPES.INT8
         }
       }, _get(_getPrototypeOf(Robot), "netScheme", this));
@@ -30790,7 +30852,7 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
       var size = 0.5 * body.shapes[0].width; // width and height are the same; robot is square
 
       var armSize = size * 0.4;
-      var armLength = robot.grabberActive ? size * 2 : armSize;
+      var armLength = !robot.isGrabInactive() ? size * 2 : armSize;
       ctx.save();
       ctx.fillStyle = col_robot;
       ctx.translate(body.position[0], body.position[1]); // Translate to the robot center
@@ -30824,7 +30886,28 @@ var RoCrowsRenderer = /*#__PURE__*/function (_Renderer) {
       ctx.closePath();
       ctx.stroke();
       ctx.fill();
+      /*
+      //debug A - grab point
+      ctx.fillStyle = "#F55";
+      ctx.beginPath();
+      ctx.arc(0, game.grabReach, game.robotSize / 10, 0, 2 * Math.PI, true);
+      ctx.closePath();
+      ctx.fill();
+      //end debug A
+      */
+
       ctx.restore();
+      /*debug B - grab point as calculated
+      let grabVector = { x: body.position[0] + game.grabReach * Math.sin(body.angle), y:body.position[1] + game.grabReach * Math.cos(body.angle) };
+      ctx.save();
+      ctx.fillStyle = "#55F";
+      ctx.beginPath();
+      ctx.arc(grabVector.x, grabVector.y, game.robotSize / 10, 0, 2 * Math.PI, true);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      //end debug B
+      */
     }
   }, {
     key: "drawAviary",
@@ -30966,6 +31049,8 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       crowSpeed: 1.5,
       robotSpeed: 0.5,
       grabDuration: 120,
+      grabReach: 0.2,
+      grabTolerance: 0.05,
       // collision groups
       ROBOT: Math.pow(2, 1),
       CROW: Math.pow(2, 2),
@@ -31056,7 +31141,7 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       var va = 0;
       var a = new __WEBPACK_IMPORTED_MODULE_1__Aviary__["a" /* default */](this, {}, {
         playerId: playerId,
-        mass: 100,
+        mass: 1000,
         angularVelocity: va,
         position: new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](x, y),
         velocity: new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](vx, vy)
@@ -31074,8 +31159,8 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       }).physicsObj;
       var x = playerAviaryBody.position[0];
       x += this.aviaryRadius * 3 * (x > 0 ? -1 : 1);
-      var y = playerAviaryBody.position[1];
-      y += this.aviaryRadius * 3 * (y > 0 ? -1 : 1);
+      var y = playerAviaryBody.position[1]; //y += this.aviaryRadius * 3 * (y > 0 ? -1 : 1);
+
       var vx = 0;
       var vy = 0;
       var s = new __WEBPACK_IMPORTED_MODULE_3__Robot__["a" /* default */](this, {}, {
@@ -31135,14 +31220,22 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
           robot.velocity = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](0, -this.robotSpeed);
           robot.angle = crow.messageAngle;
         } else if (crow.message === 'space') {
-          if (!robot.grabberActive) {
-            robot.grabberActive = true;
-            this.timer.add(this.grabDuration, this.cancelGrab, this, [robot.id]);
+          console.log("grab message received by robot!");
+
+          if (robot.isGrabHolding()) {
+            //TODO: update the carried object - here or in cancelGrab?
+            this.cancelGrab(robot, true);
+          } else if (!robot.isGrabSearching()) {
+            robot.setGrabSearching();
+            this.timer.add(this.grabDuration, this.cancelGrab, this, [robot.id, false]);
+          } else {
+            console.log("robot ignored it, grabState is currently " + robot.grabState);
           }
         }
 
         robot.angularVelocity = 0;
         robot.refreshToPhysics();
+        robot.updateGrabbedObject();
         this.removeObjectFromWorld(crow.id);
       } else {
         console.log("crow flew over competitor robot");
@@ -31150,16 +31243,52 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
     }
   }, {
     key: "cancelGrab",
-    value: function cancelGrab(robotId) {
-      //this.emit('cancelGrab', robotId); // is it necessary to emit this??
-      var robot = this.world.queryObject({
-        id: robotId
-      });
+    value: function cancelGrab(robot, force) {
+      //the method can be called with Robot object or id
+      if (!(robot instanceof __WEBPACK_IMPORTED_MODULE_3__Robot__["a" /* default */])) {
+        console.log("looking up robot by id " + robot);
+        robot = this.world.queryObject({
+          id: robot
+        });
+      } //this.emit('cancelGrab', robotId); // it does not seem necessary to emit this; not sure quite why yet
 
-      if (robot && robot instanceof __WEBPACK_IMPORTED_MODULE_3__Robot__["a" /* default */]) {
-        robot.grabberActive = false;
+
+      if (robot && robot instanceof __WEBPACK_IMPORTED_MODULE_3__Robot__["a" /* default */] && (force || robot.isGrabSearching())) {
+        console.log("cancelling grab");
+        robot.setGrabInactive(); //TODO drop any carried object?
       }
-    } // two robots have hit each other TODO dead stop? bounce? damage?
+    } // robot has collided with something - see if it can be grabbed
+
+  }, {
+    key: "checkGrab",
+    value: function checkGrab(robot, object) {
+      if (robot.isGrabSearching()) {
+        if (object instanceof __WEBPACK_IMPORTED_MODULE_1__Aviary__["a" /* default */]) {
+          if (this.isInGrabRange(robot, object)) {
+            console.log("aviary grabbed!");
+            robot.setGrabHolding(object);
+          }
+        } // TODO also allow picking up other Robots
+
+      }
+    }
+  }, {
+    key: "isInGrabRange",
+    value: function isInGrabRange(robot, object) {
+      var body = robot.physicsObj; //calculate grab point
+
+      var grabVector = new __WEBPACK_IMPORTED_MODULE_0_lance_gg__["TwoVector"](body.position[0] + this.grabReach * Math.sin(body.angle), body.position[1] + this.grabReach * Math.cos(body.angle)); // calculate distance from grabpoint to object centre
+
+      grabVector.subtract(object.position);
+
+      if (grabVector.length() < this.grabTolerance) {
+        return true;
+      } else {
+        console.log("distance from grabpoint to object too big: " + grabVector.length());
+      }
+
+      return false;
+    } // two robots have hit each other TODO dead stop? bounce? damage? grab?
 
   }, {
     key: "robotCrash",

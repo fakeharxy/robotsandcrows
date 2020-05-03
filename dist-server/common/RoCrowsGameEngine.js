@@ -77,6 +77,8 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       crowSpeed: 1.5,
       robotSpeed: 0.5,
       grabDuration: 120,
+      grabReach: 0.2,
+      grabTolerance: 0.05,
       // collision groups
       ROBOT: Math.pow(2, 1),
       CROW: Math.pow(2, 2),
@@ -167,7 +169,7 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       var va = 0;
       var a = new _Aviary["default"](this, {}, {
         playerId: playerId,
-        mass: 100,
+        mass: 1000,
         angularVelocity: va,
         position: new _lanceGg.TwoVector(x, y),
         velocity: new _lanceGg.TwoVector(vx, vy)
@@ -185,8 +187,8 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
       }).physicsObj;
       var x = playerAviaryBody.position[0];
       x += this.aviaryRadius * 3 * (x > 0 ? -1 : 1);
-      var y = playerAviaryBody.position[1];
-      y += this.aviaryRadius * 3 * (y > 0 ? -1 : 1);
+      var y = playerAviaryBody.position[1]; //y += this.aviaryRadius * 3 * (y > 0 ? -1 : 1);
+
       var vx = 0;
       var vy = 0;
       var s = new _Robot["default"](this, {}, {
@@ -246,14 +248,22 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
           robot.velocity = new _lanceGg.TwoVector(0, -this.robotSpeed);
           robot.angle = crow.messageAngle;
         } else if (crow.message === 'space') {
-          if (!robot.grabberActive) {
-            robot.grabberActive = true;
-            this.timer.add(this.grabDuration, this.cancelGrab, this, [robot.id]);
+          console.log("grab message received by robot!");
+
+          if (robot.isGrabHolding()) {
+            //TODO: update the carried object - here or in cancelGrab?
+            this.cancelGrab(robot, true);
+          } else if (!robot.isGrabSearching()) {
+            robot.setGrabSearching();
+            this.timer.add(this.grabDuration, this.cancelGrab, this, [robot.id, false]);
+          } else {
+            console.log("robot ignored it, grabState is currently " + robot.grabState);
           }
         }
 
         robot.angularVelocity = 0;
         robot.refreshToPhysics();
+        robot.updateGrabbedObject();
         this.removeObjectFromWorld(crow.id);
       } else {
         console.log("crow flew over competitor robot");
@@ -261,16 +271,52 @@ var RoCrowsGameEngine = /*#__PURE__*/function (_GameEngine) {
     }
   }, {
     key: "cancelGrab",
-    value: function cancelGrab(robotId) {
-      //this.emit('cancelGrab', robotId); // is it necessary to emit this??
-      var robot = this.world.queryObject({
-        id: robotId
-      });
+    value: function cancelGrab(robot, force) {
+      //the method can be called with Robot object or id
+      if (!(robot instanceof _Robot["default"])) {
+        console.log("looking up robot by id " + robot);
+        robot = this.world.queryObject({
+          id: robot
+        });
+      } //this.emit('cancelGrab', robotId); // it does not seem necessary to emit this; not sure quite why yet
 
-      if (robot && robot instanceof _Robot["default"]) {
-        robot.grabberActive = false;
+
+      if (robot && robot instanceof _Robot["default"] && (force || robot.isGrabSearching())) {
+        console.log("cancelling grab");
+        robot.setGrabInactive(); //TODO drop any carried object?
       }
-    } // two robots have hit each other TODO dead stop? bounce? damage?
+    } // robot has collided with something - see if it can be grabbed
+
+  }, {
+    key: "checkGrab",
+    value: function checkGrab(robot, object) {
+      if (robot.isGrabSearching()) {
+        if (object instanceof _Aviary["default"]) {
+          if (this.isInGrabRange(robot, object)) {
+            console.log("aviary grabbed!");
+            robot.setGrabHolding(object);
+          }
+        } // TODO also allow picking up other Robots
+
+      }
+    }
+  }, {
+    key: "isInGrabRange",
+    value: function isInGrabRange(robot, object) {
+      var body = robot.physicsObj; //calculate grab point
+
+      var grabVector = new _lanceGg.TwoVector(body.position[0] + this.grabReach * Math.sin(body.angle), body.position[1] + this.grabReach * Math.cos(body.angle)); // calculate distance from grabpoint to object centre
+
+      grabVector.subtract(object.position);
+
+      if (grabVector.length() < this.grabTolerance) {
+        return true;
+      } else {
+        console.log("distance from grabpoint to object too big: " + grabVector.length());
+      }
+
+      return false;
+    } // two robots have hit each other TODO dead stop? bounce? damage? grab?
 
   }, {
     key: "robotCrash",

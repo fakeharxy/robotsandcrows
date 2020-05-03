@@ -89,9 +89,11 @@ var RoCrowsServerEngine = /*#__PURE__*/function (_ServerEngine) {
       this.gameEngine.trace.trace(function () {
         return "collision and     B=".concat(B.toString());
       });
-      if (B instanceof _Robot["default"] && A instanceof _Robot["default"]) this.gameEngine.robotCrash(A, B);
       if (A instanceof _Crow["default"] && B instanceof _Robot["default"]) this.gameEngine.crowArrived(A, B);
-      if (B instanceof _Crow["default"] && A instanceof _Robot["default"]) this.gameEngine.crowArrived(B, A); //if (A instanceof Robot && B instanceof Asteroid) this.kill(A);
+      if (B instanceof _Crow["default"] && A instanceof _Robot["default"]) this.gameEngine.crowArrived(B, A);
+      if (A instanceof _Robot["default"] && B instanceof _Aviary["default"]) this.gameEngine.checkGrab(A, B);
+      if (A instanceof _Aviary["default"] && B instanceof _Robot["default"]) this.gameEngine.checkGrab(B, A);
+      if (B instanceof _Robot["default"] && A instanceof _Robot["default"]) this.gameEngine.robotCrash(A, B); //if (A instanceof Robot && B instanceof Asteroid) this.kill(A);
       //if (B instanceof Robot && A instanceof Asteroid) this.kill(B);
       // restart game
 

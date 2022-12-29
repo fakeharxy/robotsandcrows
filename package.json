@@ -8,12 +8,12 @@
   "main": "main.js",
   "dependencies": {
     "@babel/node": "^7.8.7",
-    "babel-loader": "^8.1.0",
+    "babel-loader": "^8.3.0",
     "express": "^4.17.1",
     "lance-gg": "^4.0.8",
     "query-string": "^4.2.3",
     "socket.io": "^2.3.0",
-    "webpack": "^3.8.1"
+    "webpack": "^5.75.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
